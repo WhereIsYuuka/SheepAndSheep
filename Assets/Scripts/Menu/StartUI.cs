@@ -3,6 +3,7 @@ using DG.Tweening;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class StartUI : MonoBehaviour
 {
@@ -36,10 +37,11 @@ public class StartUI : MonoBehaviour
                 .Append(textList[0].DOFade(0, 1f).SetEase(Ease.InOutSine))
                 .Join(textList[1].DOFade(0, 1f).SetEase(Ease.InOutSine))
                 .Join(imageLogo.DOFade(0, 1f).SetEase(Ease.InOutSine))
-                .OnComplete(() => 
+                .OnComplete(() =>
                 {
                     // AudioManager.Instance.PlaySFX(0);
-                    UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("Menu");
+                    SceneManager.LoadSceneAsync("Menu");
+                    AudioManager.Instance.RandomMusic();
                 });
     } 
 }

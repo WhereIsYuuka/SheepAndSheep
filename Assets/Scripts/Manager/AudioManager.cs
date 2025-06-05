@@ -16,7 +16,7 @@ public class AudioManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            AddAudioSource();
+            StartCoroutine(AddAudioSourceAsync());
         }
         else
         {
@@ -26,7 +26,7 @@ public class AudioManager : MonoBehaviour
 
     private void Start()
     {
-        RandomMusic();
+        // RandomMusic();
     }
 
     private void PlaySong()
@@ -74,7 +74,7 @@ public class AudioManager : MonoBehaviour
         sfxSource.volume = volume;
     }
 
-    private void AddAudioSource()
+    private IEnumerator AddAudioSourceAsync()
     {
         if (musicSource == null)
         {
@@ -86,7 +86,20 @@ public class AudioManager : MonoBehaviour
             sfxSource = gameObject.AddComponent<AudioSource>();
             sfxSource.playOnAwake = false;
         }
-        musics = new List<AudioClip>(Resources.LoadAll<AudioClip>("Audio/Music"));
-        SFXs = new List<AudioClip>(Resources.LoadAll<AudioClip>("Audio/SFX"));
+        musics = new List<AudioClip>();
+        SFXs = new List<AudioClip>();
+
+        // load audio clips async from resources 
+        ResourceRequest musicRequest = Resources.LoadAsync<AudioClip>("Audio/Music");
+        yield return musicRequest;
+        if (musicRequest.asset is AudioClip musicClip)
+        {
+            musics.Add(musicClip);
+        }
+        AudioClip[] musicClips = Resources.LoadAll<AudioClip>("Audio/Music");
+        musics.AddRange(musicClips);
+
+        AudioClip[] sfxClips = Resources.LoadAll<AudioClip>("Audio/SFX");
+        SFXs.AddRange(sfxClips);
     }
 }

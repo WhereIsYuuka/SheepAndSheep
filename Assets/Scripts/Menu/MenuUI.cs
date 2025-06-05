@@ -17,12 +17,13 @@ public class MenuUI : MonoBehaviour
     {
         startButton.onClick.AddListener(() =>
         {
-            // AudioManager.Instance.PlaySFX(0);
+            AudioManager.Instance.PlaySFX(0);
             SceneManager.LoadSceneAsync("GameScene");
+            AudioManager.Instance.RandomMusic();
         });
         exitButton.onClick.AddListener(() =>
         {
-            // AudioManager.Instance.PlaySFX(0);
+            AudioManager.Instance.PlaySFX(0);
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false; // Stop playing in the editor
 #else
