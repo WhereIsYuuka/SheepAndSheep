@@ -8,6 +8,7 @@ public class AudioManager : MonoBehaviour
 
     [SerializeField] private List<AudioClip> musics, SFXs;
     [SerializeField] private AudioSource musicSource, sfxSource;
+    private int currentMusicIndex = 0;
 
     private void Awake()
     {
@@ -15,6 +16,7 @@ public class AudioManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            AddAudioSource();
         }
         else
         {
@@ -22,7 +24,8 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    private void Start() {
+    private void Start()
+    {
         RandomMusic();
     }
 
@@ -69,5 +72,21 @@ public class AudioManager : MonoBehaviour
     public void SetSFXVolume(float volume)
     {
         sfxSource.volume = volume;
+    }
+
+    private void AddAudioSource()
+    {
+        if (musicSource == null)
+        {
+            musicSource = gameObject.AddComponent<AudioSource>();
+            musicSource.playOnAwake = false;
+        }
+        if (sfxSource == null)
+        {
+            sfxSource = gameObject.AddComponent<AudioSource>();
+            sfxSource.playOnAwake = false;
+        }
+        musics = new List<AudioClip>(Resources.LoadAll<AudioClip>("Audio/Music"));
+        SFXs = new List<AudioClip>(Resources.LoadAll<AudioClip>("Audio/SFX"));
     }
 }
