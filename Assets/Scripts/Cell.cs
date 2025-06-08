@@ -26,7 +26,8 @@ public class Cell : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IP
         set => col = value;
     }
     int value;
-    public int Value {
+    public int Value
+    {
         get => value;
         set
         {
@@ -39,7 +40,21 @@ public class Cell : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IP
     public bool MouseEnabled
     {
         get => mouseEnabled;
-        set => mouseEnabled = value;
+        set
+        {
+            mouseEnabled = value;
+        }
+    }
+
+    bool isGray;
+    public bool IsGray
+    {
+        get => isGray;
+        set
+        {
+            isGray = value;
+            SetAlpha(!value, true);
+        }
     }
 
     private void ChangeSize()
@@ -56,6 +71,7 @@ public class Cell : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IP
     {
         if (!MouseEnabled)
             return;
+        ChangeSize();
         OnCellClicked.Invoke();
     }
 
@@ -71,5 +87,22 @@ public class Cell : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IP
         if (!MouseEnabled)
             return;
         ResetSize();
+    }
+
+    public void SetAlpha(bool isEnabled, bool isTween = false)
+    {
+        Image image = GetComponent<Image>();
+        if (image == null)
+            return;
+        Color color = isEnabled ? Color.white : Color.gray;
+        if (isTween)
+        {
+            image.DOKill();
+            image.DOColor(color, 0.3f);
+        }
+        else
+        {
+            image.color = color;
+        }
     }
 }

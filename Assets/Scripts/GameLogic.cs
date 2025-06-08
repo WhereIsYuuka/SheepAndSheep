@@ -5,8 +5,10 @@ using UnityEngine.UIElements;
 
 public class GameLogic : MonoBehaviour
 {
+    public static GameLogic Instance { get; private set; }
     public GameObject cellPrefab;
     [SerializeField]
+    [Header("=====The parameters of the center cell=====")]
     private int layer = 3;
     [SerializeField]
     private int row = 3;
@@ -15,12 +17,39 @@ public class GameLogic : MonoBehaviour
     [SerializeField]
     private float offsetSize = 85f;
     [SerializeField]
+    [Header("=====The transform of the extra cell")]
+    private List<RectTransform> cellTransforms = new();
+    [SerializeField]
+    [Header("=====The parameters of the left cell=====")]
+    private int cellNum = 5;
+    private int cellOffset = 50;
+
+    [SerializeField]
+    [Header("=====The parameters of the cell bar=====")]
     private float barOffset = 115f; // Offset for the bar position
     [SerializeField]
     private RectTransform targetRectTransform;
     private Pool<Cell> cellPool;
+    /// <summary>
+    /// List of cells on the bar.
+    /// </summary>
     private List<Cell> cells = new();
+    [SerializeField]
+    private Cell[,,] cellArray;
     private bool isFailed;
+
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
 
     void Start()
     {
@@ -35,6 +64,7 @@ public class GameLogic : MonoBehaviour
 
     private void GenerateCells()
     {
+        cellArray = new Cell[layer, row, col];
         // float centerX = (col - 1) * offsetSize / 2f;
         // float centerY = (row - 1) * offsetSize * 1.2f / 2f;
         // float centerZ = (layer - 1) * offsetSize / 2f / 2f;
@@ -43,7 +73,7 @@ public class GameLogic : MonoBehaviour
             int curRow = row - i;
             int curCol = col - i;
             if (curRow <= 0 || curCol <= 0)
-                break; // Skip if no cells to generate in this layer
+                break;
 
             float offsetX = (curCol - 1) * offsetSize / 2f;
             float offsetY = (curRow - 1) * offsetSize * 1.2f / 2f;
@@ -62,31 +92,30 @@ public class GameLogic : MonoBehaviour
                         0
                     );
                     cell.name = $"Cell_{i}_{j}_{k}";
-                    cell.MouseEnabled = true; // Enable mouse interaction
-                    cell.Value = Random.Range(1, 15); // Random value between 1 and 13
+                    cell.Layer = i;
+                    cell.Row = j;
+                    cell.Col = k;
+                    cellArray[i, j, k] = cell; // Store the cell in the array
+
+                    cell.Value = Random.Range(1, 15);
                     cell.OnCellClicked.AddListener(() =>
                     {
+                        AudioManager.Instance.PlaySFX(1);
                         AddCellToBar(cell);
-                        // cell.transform.DOLocalMove(targetRectTransform.localPosition, 0.5f)
-                        //     .SetEase(Ease.OutBack)
-                        //     .OnComplete(() =>
-                        //     {
-                        //         //TODO: Add the logic to move the cell to the target position
-                        //         AddCellToBar(cell);
-                        //     });
                     });
                 }
             }
         }
+        UpdateAllCellInteractable();
     }
 
-/// <summary>
-/// Update the position of cells on the bar.
-/// </summary>
-/// <param name="idx">the index of the cell that will be move</param>
-    private void UpdateCellOnBar(int idx = 0)
+    /// <summary>
+    /// Update the position of cells on the bar.
+    /// </summary>
+    /// <param name="idx">the index of the cell that will be move</param>
+    private void UpdateAllCellOnBar()
     {
-        for (int i = idx; i < cells.Count; i++)
+        for (int i = 0; i < cells.Count; i++)
         {
             var cell = cells[i];
             cell.transform.DOLocalMoveX(
@@ -95,10 +124,26 @@ public class GameLogic : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Update the position of cells after the cell will be removed.
+    /// </summary>
+    /// <param name="idx"></param>
+    private void UpdatePartCellOnBar(int idx)
+    {
+        for (int i = idx; i < cells.Count; i++)
+        {
+            var cell = cells[i];
+            cell.transform.DOLocalMoveX(
+                (i + 1) * barOffset, 0.5f
+            );
+        }
+    }
+
     private void AddCellToBar(Cell cell)
     {
         bool isAdd = false;
         cell.transform.SetParent(targetRectTransform);
+        cellArray[cell.Layer, cell.Row, cell.Col] = null; // Remove from the array
         for (int i = 0; i < cells.Count; i++)
         {
             Cell c = cells[i];
@@ -108,10 +153,11 @@ public class GameLogic : MonoBehaviour
                 {
                     if (cells[i + 1].Value == cell.Value)
                     {
-                        UpdateCellOnBar(i + 2);
+                        UpdatePartCellOnBar(i + 2);
                         var a = cells[i];
                         var b = cells[i + 1];
                         cells.RemoveRange(i, 2);
+                        UpdateAllCellInteractable();
                         cell.transform.DOLocalMove(
                             new Vector3(b.transform.localPosition.x + barOffset, 0, 0), 0.5f
                         ).SetEase(Ease.OutBack).OnComplete(() =>
@@ -120,7 +166,8 @@ public class GameLogic : MonoBehaviour
                             cellPool.ReturnObject(a);
                             cellPool.ReturnObject(b);
                             AudioManager.Instance.PlaySFX(2);
-                            UpdateCellOnBar();
+                            UpdateAllCellOnBar();
+
                         });
 
                         return;
@@ -144,14 +191,121 @@ public class GameLogic : MonoBehaviour
         cell.transform.DOLocalMove(new Vector3(
             cells.Count * barOffset, 0, 0
         ), 0.5f).SetEase(Ease.OutBack);
-        cell.MouseEnabled = false; // Disable mouse interaction after adding to bar
+        cell.MouseEnabled = false;
 
-        UpdateCellOnBar();
+        UpdateAllCellOnBar();
+        UpdateAllCellInteractable();
 
         if (cells.Count >= 7)
         {
             Debug.Log($"Game Over!");
             isFailed = true;
+        }
+    }
+
+    public bool IsCellUncovered(Cell cell)
+    {
+        int l = cell.Layer;
+        int r = cell.Row;
+        int c = cell.Col;
+
+        int upLayer = l - 1;
+        if (upLayer < 0)
+            return true;
+
+        int upRow = row - upLayer;
+        int upCol = col - upLayer;
+
+        int[,] offsets = new int[,] {
+            { 0, 0 },
+            // { -1, 0 },   // left
+            { 1, 0 },    // right
+            // { 0, 1 },  // down
+            { 0, 1 },    // up
+            { 1, 1 }
+        };
+
+        for (int i = 0; i < offsets.GetLength(0); i++)
+        {
+            int curRow = r + offsets[i, 1];
+            int curCol = c + offsets[i, 0];
+            if (curRow >= 0 && curRow < upRow && curCol >= 0 && curCol < upCol)
+            {
+                Cell upCell = cellArray[upLayer, curRow, curCol];
+                if (upCell != null && upCell.gameObject.activeSelf)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private void UpdateAllCellInteractable()
+    {
+        for (int i = 0; i < layer; i++)
+        {
+            int curRow = row - i;
+            int curCol = col - i;
+            if (curRow <= 0 || curCol <= 0)
+                break;
+            for (int j = 0; j < curRow; j++)
+            {
+                for (int k = 0; k < curCol; k++)
+                {
+                    var cell = cellArray[i, j, k];
+                    if (cell != null)
+                    {
+                        bool uncovered = IsCellUncovered(cell);
+                        cell.MouseEnabled = uncovered;
+                        cell.IsGray = !uncovered;
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Shuffle the values of the active cells in the game
+    /// </summary>
+    public void ShuffelCells()
+    {
+        if (isFailed)
+            return;
+        List<Cell> activeCells = new List<Cell>();
+        for (int i = 0; i < layer; i++)
+        {
+            int curRow = row - i;
+            int curCol = col - i;
+            if (curRow <= 0 || curCol <= 0)
+                break;
+            for (int j = 0; j < curRow; j++)
+            {
+                for (int k = 0; k < curCol; k++)
+                {
+                    var cell = cellArray[i, j, k];
+                    if (cell != null && cell.gameObject.activeSelf)
+                    {
+                        activeCells.Add(cell);
+                    }
+                }
+            }
+        }
+        List<int> values = new List<int>();
+        foreach (var cell in activeCells)
+            values.Add(cell.Value);
+
+        for (int i = values.Count - 1; i > 0; i--)
+        {
+            int rand = Random.Range(0, i + 1);
+            int temp = values[i];
+            values[i] = values[rand];
+            values[rand] = temp;
+        }
+
+        for (int i = 0; i < activeCells.Count; i++)
+        {
+            activeCells[i].Value = values[i];
         }
     }
 }
