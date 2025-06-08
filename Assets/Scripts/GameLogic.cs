@@ -17,18 +17,14 @@ public class GameLogic : MonoBehaviour
     [SerializeField]
     private float offsetSize = 85f;
     [SerializeField]
-    [Header("=====The transform of the extra cell")]
-    private List<RectTransform> cellTransforms = new();
-    [SerializeField]
-    [Header("=====The parameters of the left cell=====")]
-    private int cellNum = 5;
-    private int cellOffset = 50;
-
-    [SerializeField]
-    [Header("=====The parameters of the cell bar=====")]
     private float barOffset = 115f; // Offset for the bar position
     [SerializeField]
     private RectTransform targetRectTransform;
+    [SerializeField]
+    [Header("=====The parameters of the extra cell=====")]
+    private List<ExtraCellConfig> extraCellConfigs = new();
+    private Dictionary<ExtraCellDirection, List<Cell>> extraCells = new();
+
     private Pool<Cell> cellPool;
     /// <summary>
     /// List of cells on the bar.
@@ -60,6 +56,7 @@ public class GameLogic : MonoBehaviour
         layer * row * col
         );
         GenerateCells();
+        GenerateExtraCells();
     }
 
     private void GenerateCells()
@@ -88,7 +85,6 @@ public class GameLogic : MonoBehaviour
                     cell.transform.localPosition = new Vector3(
                         k * offsetSize - offsetX,
                         j * offsetSize * 1.02f - offsetY,
-                        // i * offsetSize - centerZ
                         0
                     );
                     cell.name = $"Cell_{i}_{j}_{k}";
@@ -105,6 +101,50 @@ public class GameLogic : MonoBehaviour
                     });
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Generate extra cells based on the configurations provided
+    /// </summary>
+    private void GenerateExtraCells()
+    {
+        foreach (var config in extraCellConfigs)
+        {
+            List<Cell> cellList = new List<Cell>();
+            Vector2 dir = Vector2.zero;
+            dir = config.direction switch
+            {
+                ExtraCellDirection.Left => Vector2.left,
+                ExtraCellDirection.Right => Vector2.right,
+                ExtraCellDirection.Up => Vector2.up,
+                ExtraCellDirection.Down => Vector2.down,
+                _ => Vector2.zero
+            };
+            for (int i = 0; i < config.count; i++)
+            {
+                Cell cell = cellPool.GetObject();
+                cell.gameObject.SetActive(true);
+                cell.transform.SetParent(transform);
+                cell.transform.localPosition = new Vector3(
+                    config.startPosition.localPosition.x + i * config.offset * dir.x,
+                    config.startPosition.localPosition.y + i * config.offset * dir.y,
+                    0
+                );
+                cell.Layer = -1;
+                cell.Row = i; // Extra cells are always in the first row
+                cell.Col = 0; // Extra cells are always in the first column
+                cell.name = $"ExtraCell_{config.direction}_{i}";
+                cell.Value = Random.Range(1, 15);
+                cell.MouseEnabled = true;
+                cell.OnCellClicked.AddListener(() =>
+                {
+                    AudioManager.Instance.PlaySFX(1);
+                    AddCellToBar(cell);
+                });
+                cellList.Add(cell);
+            }
+            extraCells[config.direction] = cellList;
         }
         UpdateAllCellInteractable();
     }
@@ -143,50 +183,59 @@ public class GameLogic : MonoBehaviour
     {
         bool isAdd = false;
         cell.transform.SetParent(targetRectTransform);
-        cellArray[cell.Layer, cell.Row, cell.Col] = null; // Remove from the array
-        for (int i = 0; i < cells.Count; i++)
-        {
-            Cell c = cells[i];
-            if (c.Value == cell.Value)
+
+        if (cell.Layer >= 0 && cell.Layer < layer)
+            cellArray[cell.Layer, cell.Row, cell.Col] = null;   // Remove from the array
+        else
+            foreach (var extraCellList in extraCells.Values)
             {
-                if (i < cells.Count - 1)
+                if (extraCellList.Contains(cell))
                 {
-                    if (cells[i + 1].Value == cell.Value)
-                    {
-                        UpdatePartCellOnBar(i + 2);
-                        var a = cells[i];
-                        var b = cells[i + 1];
-                        cells.RemoveRange(i, 2);
-                        UpdateAllCellInteractable();
-                        cell.transform.DOLocalMove(
-                            new Vector3(b.transform.localPosition.x + barOffset, 0, 0), 0.5f
-                        ).SetEase(Ease.OutBack).OnComplete(() =>
-                        {
-                            cellPool.ReturnObject(cell);
-                            cellPool.ReturnObject(a);
-                            cellPool.ReturnObject(b);
-                            AudioManager.Instance.PlaySFX(2);
-                            UpdateAllCellOnBar();
-
-                        });
-
-                        return;
-                    }
-                    else
-                    {
-                        cells.Insert(i + 1, cell);
-                        isAdd = true;
-                        break;
-                    }
-
+                    extraCellList.Remove(cell); // Remove from the extra cells list
+                    break;
                 }
             }
-        }
+        for (int i = 0; i < cells.Count; i++)
+            {
+                Cell c = cells[i];
+                if (c.Value == cell.Value)
+                {
+                    if (i < cells.Count - 1)
+                    {
+                        if (cells[i + 1].Value == cell.Value)
+                        {
+                            UpdatePartCellOnBar(i + 2);
+                            var a = cells[i];
+                            var b = cells[i + 1];
+                            cells.RemoveRange(i, 2);
+                            UpdateAllCellInteractable();
+                            cell.transform.DOLocalMove(
+                                new Vector3(b.transform.localPosition.x + barOffset, 0, 0), 0.5f
+                            ).SetEase(Ease.OutBack).OnComplete(() =>
+                            {
+                                cellPool.ReturnObject(cell);
+                                cellPool.ReturnObject(a);
+                                cellPool.ReturnObject(b);
+                                AudioManager.Instance.PlaySFX(2);
+                                UpdateAllCellOnBar();
+
+                            });
+                            return;
+                        }
+                        else
+                        {
+                            cells.Insert(i + 1, cell);
+                            isAdd = true;
+                            break;
+                        }
+
+                    }
+                }
+            }
         if (!isAdd)
         {
             cells.Add(cell);
         }
-
 
         cell.transform.DOLocalMove(new Vector3(
             cells.Count * barOffset, 0, 0
@@ -263,6 +312,15 @@ public class GameLogic : MonoBehaviour
                 }
             }
         }
+        foreach (var extraCellList in extraCells.Values)
+        {
+            foreach (var extraCell in extraCellList)
+            {
+                bool uncovered = extraCell == extraCellList[0];
+                extraCell.MouseEnabled = uncovered;
+                extraCell.IsGray = !uncovered;
+            }
+        }
     }
 
     /// <summary>
@@ -308,4 +366,23 @@ public class GameLogic : MonoBehaviour
             activeCells[i].Value = values[i];
         }
     }
+}
+
+public enum ExtraCellDirection
+{
+    Left,
+    Right,
+    Up,
+    Down
+}
+/// <summary>
+/// Configuration for extra cells in the game.
+/// </summary>
+[System.Serializable]
+public class ExtraCellConfig
+{
+    public ExtraCellDirection direction;
+    public int count;
+    public float offset;
+    public RectTransform startPosition;
 }
