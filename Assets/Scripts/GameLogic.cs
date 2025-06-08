@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -7,13 +8,12 @@ public class GameLogic : MonoBehaviour
 {
     public static GameLogic Instance { get; private set; }
     public GameObject cellPrefab;
-    [SerializeField]
     [Header("=====The parameters of the center cell=====")]
-    private int layer = 3;
+    [ReadOnly(true)] public int layer = 3;
     [SerializeField]
-    private int row = 3;
+    [ReadOnly(true)] public int row = 3;
     [SerializeField]
-    private int col = 3;
+    [ReadOnly(true)] public int col = 3;
     [SerializeField]
     private float offsetSize = 85f;
     [SerializeField]
@@ -57,6 +57,7 @@ public class GameLogic : MonoBehaviour
         );
         GenerateCells();
         GenerateExtraCells();
+        AssignValuesForAllCells();
     }
 
     private void GenerateCells()
@@ -147,6 +148,50 @@ public class GameLogic : MonoBehaviour
             extraCells[config.direction] = cellList;
         }
         UpdateAllCellInteractable();
+    }
+
+    private void AssignValuesForAllCells()
+    {
+        List<Cell> allCells = new List<Cell>();
+        for (int i = 0; i < layer; i++)
+        {
+            int curRow = row - i;
+            int curCol = col - i;
+            if (curRow <= 0 || curCol <= 0)
+                break;
+
+            for (int j = 0; j < curRow; j++)
+                for (int k = 0; k < curCol; k++)
+                    if (cellArray[i, j, k] != null)
+                        allCells.Add(cellArray[i, j, k]);
+        }
+        foreach (var extraCellList in extraCells.Values)
+        {
+            allCells.AddRange(extraCellList);
+        }
+
+        int totalCells = allCells.Count;
+        int group = totalCells / 3;
+        List<int> values = new List<int>();
+        int valueTypeCount = Mathf.Min(14, group);
+        for (int v = 1; v <= valueTypeCount; v++)
+            for (int i = 0; i < 3; i++)
+                values.Add(v);
+        while (values.Count < totalCells)
+        {
+            values.Add(Random.Range(1, valueTypeCount + 1));
+        }
+
+        for (int i = values.Count - 1; i > 0; i--)
+        {
+            int rand = Random.Range(0, i + 1);
+            int temp = values[i];
+            values[i] = values[rand];
+            values[rand] = temp;
+        }
+
+        for (int i = 0; i < allCells.Count; i++)
+            allCells[i].Value = values[i];
     }
 
     /// <summary>
