@@ -29,11 +29,22 @@ public class GameManager : MonoBehaviour
     {
         foreach (var managerType in managers)
         {
-            if(GetComponent(managerType) == null)
+            if (GetComponent(managerType) == null)
             {
                 gameObject.AddComponent(managerType);
             }
         }
     }
 
+    public void LoadSceneMenu()
+    {
+        UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("Menu");
+        AudioManager.Instance.RandomMusic();
+    }
+
+    public void RestartGame()
+    {
+        UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
+        AudioManager.Instance.RandomMusic();
+    }
 }

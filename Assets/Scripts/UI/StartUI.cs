@@ -29,6 +29,11 @@ public class StartUI : MonoBehaviour
 
     void Start()
     {
+        SetSequence();
+    }
+
+    private void SetSequence()
+    {
         Sequence sequence = DOTween.Sequence();
         sequence.Append(imageLogo.DOFade(1, 1f).SetEase(Ease.InOutSine))
                 .Join(textList[0].DOFade(1, 1f).SetEase(Ease.InOutSine))
@@ -40,8 +45,15 @@ public class StartUI : MonoBehaviour
                 .OnComplete(() =>
                 {
                     // AudioManager.Instance.PlaySFX(0);
-                    SceneManager.LoadSceneAsync("Menu");
+                    // SceneManager.LoadSceneAsync("Menu");
+                    LoadSceneMenu();
                     AudioManager.Instance.RandomMusic();
                 });
-    } 
+    }
+
+    public void LoadSceneMenu()
+    {
+        SceneManager.LoadSceneAsync("Menu");
+        AudioManager.Instance.RandomMusic();
+    }
 }

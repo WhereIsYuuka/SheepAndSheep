@@ -9,6 +9,32 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private List<AudioClip> musics, SFXs;
     [SerializeField] private AudioSource musicSource, sfxSource;
     private int currentMusicIndex = 0;
+    private float musicVolume = 0.5f;
+    public float MusicVolume
+    {
+        get => musicVolume;
+        set
+        {
+            musicVolume = value;
+            if (musicSource != null)
+            {
+                musicSource.volume = musicVolume;
+            }
+        }
+    }
+    private float sfxVolume = 1f;
+    public float SFXVolume
+    {
+        get => sfxVolume;
+        set
+        {
+            sfxVolume = value;
+            if (sfxSource != null)
+            {
+                sfxSource.volume = sfxVolume;
+            }
+        }
+    }
 
     private void Awake()
     {
@@ -31,6 +57,7 @@ public class AudioManager : MonoBehaviour
 
     private void PlaySong()
     {
+        musicSource.volume = musicVolume;
         musicSource.clip = musics[currentMusicIndex];
         musicSource.loop = true;
         musicSource.Play();
@@ -61,17 +88,8 @@ public class AudioManager : MonoBehaviour
 
     public void PlaySFX(AudioClip clip)
     {
+        sfxSource.volume = sfxVolume;
         sfxSource.PlayOneShot(clip);
-    }
-
-    public void SetMusicVolume(float volume)
-    {
-        musicSource.volume = volume;
-    }
-
-    public void SetSFXVolume(float volume)
-    {
-        sfxSource.volume = volume;
     }
 
     private IEnumerator AddAudioSourceAsync()

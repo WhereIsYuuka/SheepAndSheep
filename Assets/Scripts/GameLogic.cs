@@ -33,6 +33,7 @@ public class GameLogic : MonoBehaviour
     [SerializeField]
     private Cell[,,] cellArray;
     private bool isFailed;
+    public GameObject failPanel;
 
     void Awake()
     {
@@ -150,6 +151,9 @@ public class GameLogic : MonoBehaviour
         UpdateAllCellInteractable();
     }
 
+/// <summary>
+/// Assign values for all cells
+/// </summary>
     private void AssignValuesForAllCells()
     {
         List<Cell> allCells = new List<Cell>();
@@ -254,6 +258,9 @@ public class GameLogic : MonoBehaviour
                             var b = cells[i + 1];
                             cells.RemoveRange(i, 2);
                             UpdateAllCellInteractable();
+                            cell.transform.DOScale(cell.transform.localScale * 0.9f, 0.5f)
+                            .SetEase(Ease.OutBack);
+
                             cell.transform.DOLocalMove(
                                 new Vector3(b.transform.localPosition.x + barOffset, 0, 0), 0.5f
                             ).SetEase(Ease.OutBack).OnComplete(() =>
@@ -290,8 +297,10 @@ public class GameLogic : MonoBehaviour
         UpdateAllCellOnBar();
         UpdateAllCellInteractable();
 
+        // Check if the game is over
         if (cells.Count >= 7)
         {
+            failPanel.SetActive(true);
             Debug.Log($"Game Over!");
             isFailed = true;
         }
