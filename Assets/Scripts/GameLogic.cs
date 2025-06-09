@@ -23,7 +23,7 @@ public class GameLogic : MonoBehaviour
     [SerializeField]
     [Header("=====The parameters of the extra cell=====")]
     [ReadOnly(true)] public List<ExtraCellConfig> extraCellConfigs = new();
-    private Dictionary<ExtraCellDirection, List<Cell>> extraCells = new();
+    private Dictionary<ExtraCellDirection, List<List<Cell>>> extraCells = new();
 
     private Pool<Cell> cellPool;
     /// <summary>
@@ -34,6 +34,7 @@ public class GameLogic : MonoBehaviour
     private Cell[,,] cellArray;
     private bool isFailed;
     public GameObject failPanel;
+    public GameObject winPanel;
 
     void Awake()
     {
@@ -144,16 +145,19 @@ public class GameLogic : MonoBehaviour
                     AudioManager.Instance.PlaySFX(1);
                     AddCellToBar(cell);
                 });
-                cellList.Add(cell);
+                // cellList.Add(cell);
+                cellList.Insert(0, cell); 
             }
-            extraCells[config.direction] = cellList;
+            if (!extraCells.ContainsKey(config.direction))
+                extraCells[config.direction] = new List<List<Cell>>();
+            extraCells[config.direction].Add(cellList);
         }
         UpdateAllCellInteractable();
     }
 
-/// <summary>
-/// Assign values for all cells
-/// </summary>
+    /// <summary>
+    /// Assign values for all cells
+    /// </summary>
     private void AssignValuesForAllCells()
     {
         List<Cell> allCells = new List<Cell>();
@@ -171,7 +175,10 @@ public class GameLogic : MonoBehaviour
         }
         foreach (var extraCellList in extraCells.Values)
         {
-            allCells.AddRange(extraCellList);
+            foreach (var extraCell in extraCellList)
+            {
+                allCells.AddRange(extraCell);
+            }
         }
 
         int totalCells = allCells.Count;
@@ -180,7 +187,7 @@ public class GameLogic : MonoBehaviour
 
         List<int> values = new List<int>();
         int baseCount = group / valueTypeCount * 3; // base count for each value type
-        int remainGroup = group - (baseCount / 3) * valueTypeCount; 
+        int remainGroup = group - (baseCount / 3) * valueTypeCount;
 
         // 先均分
         for (int v = 1; v <= valueTypeCount; v++)
@@ -285,52 +292,55 @@ public class GameLogic : MonoBehaviour
         else
             foreach (var extraCellList in extraCells.Values)
             {
-                if (extraCellList.Contains(cell))
+                foreach (var extraCell in extraCellList)
                 {
-                    extraCellList.Remove(cell); // Remove from the extra cells list
-                    break;
-                }
-            }
-        for (int i = 0; i < cells.Count; i++)
-            {
-                Cell c = cells[i];
-                if (c.Value == cell.Value)
-                {
-                    if (i < cells.Count - 1)
+                    if (extraCell.Contains(cell))
                     {
-                        if (cells[i + 1].Value == cell.Value)
-                        {
-                            UpdatePartCellOnBar(i + 2);
-                            var a = cells[i];
-                            var b = cells[i + 1];
-                            cells.RemoveRange(i, 2);
-                            UpdateAllCellInteractable();
-                            cell.transform.DOScale(cell.transform.localScale * 0.9f, 0.5f)
-                            .SetEase(Ease.OutBack);
-
-                            cell.transform.DOLocalMove(
-                                new Vector3(b.transform.localPosition.x + barOffset, 0, 0), 0.5f
-                            ).SetEase(Ease.OutBack).OnComplete(() =>
-                            {
-                                cellPool.ReturnObject(cell);
-                                cellPool.ReturnObject(a);
-                                cellPool.ReturnObject(b);
-                                AudioManager.Instance.PlaySFX(2);
-                                UpdateAllCellOnBar();
-
-                            });
-                            return;
-                        }
-                        else
-                        {
-                            cells.Insert(i + 1, cell);
-                            isAdd = true;
-                            break;
-                        }
-
+                        extraCell.Remove(cell); // Remove from the extra cells list
+                        break;
                     }
                 }
             }
+        for (int i = 0; i < cells.Count; i++)
+        {
+            Cell c = cells[i];
+            if (c.Value == cell.Value)
+            {
+                if (i < cells.Count - 1)
+                {
+                    if (cells[i + 1].Value == cell.Value)
+                    {
+                        UpdatePartCellOnBar(i + 2);
+                        var a = cells[i];
+                        var b = cells[i + 1];
+                        cells.RemoveRange(i, 2);
+                        UpdateAllCellInteractable();
+                        cell.transform.DOScale(cell.transform.localScale * 0.9f, 0.5f)
+                        .SetEase(Ease.OutBack);
+
+                        cell.transform.DOLocalMove(
+                            new Vector3(b.transform.localPosition.x + barOffset, 0, 0), 0.5f
+                        ).SetEase(Ease.OutBack).OnComplete(() =>
+                        {
+                            cellPool.ReturnObject(cell);
+                            cellPool.ReturnObject(a);
+                            cellPool.ReturnObject(b);
+                            AudioManager.Instance.PlaySFX(2);
+                            UpdateAllCellOnBar();
+                            CheckWin();
+                        });
+                        return;
+                    }
+                    else
+                    {
+                        cells.Insert(i + 1, cell);
+                        isAdd = true;
+                        break;
+                    }
+
+                }
+            }
+        }
         if (!isAdd)
         {
             cells.Add(cell);
@@ -343,6 +353,7 @@ public class GameLogic : MonoBehaviour
 
         UpdateAllCellOnBar();
         UpdateAllCellInteractable();
+        CheckWin();
 
         // Check if the game is over
         if (cells.Count >= 7)
@@ -415,11 +426,16 @@ public class GameLogic : MonoBehaviour
         }
         foreach (var extraCellList in extraCells.Values)
         {
-            foreach (var extraCell in extraCellList)
+            foreach (var cellList in extraCellList)
             {
-                bool uncovered = extraCell == extraCellList[0];
-                extraCell.MouseEnabled = uncovered;
-                extraCell.IsGray = !uncovered;
+                for (int i = 0; i < cellList.Count; i++)
+                {
+                    cellList[i].MouseEnabled = (i == 0);
+                    cellList[i].IsGray = (i != 0);
+                }
+                // bool uncovered = extraCell == extraCellList[0];
+                // extraCell.MouseEnabled = uncovered;
+                // extraCell.IsGray = !uncovered;
             }
         }
     }
@@ -466,6 +482,42 @@ public class GameLogic : MonoBehaviour
         {
             activeCells[i].Value = values[i];
         }
+    }
+
+    private void CheckWin()
+    {
+        for (int i = 0; i < layer; i++)
+        {
+            int curRow = row - i;
+            int curCol = col - i;
+            if (curRow <= 0 || curCol <= 0)
+                break;
+            for (int j = 0; j < curRow; j++)
+                for (int k = 0; k < curCol; k++)
+                    if (cellArray[i, j, k] != null)
+                    {
+                        Debug.Log($"Cell {i}_{j}_{k} is not null, game not win yet.");
+                        return; 
+                    }
+        }
+        // extra
+        foreach (var extraCellList in extraCells.Values)
+            foreach (var cellList in extraCellList)
+                if (cellList.Count > 0)
+                {
+                    Debug.Log("Extra cell list is not empty, game not win yet.");
+                    return;
+                } 
+
+        if(cells.Count > 0)
+        {
+            Debug.Log("Bar is not empty, game not win yet.");
+            return;
+        }
+        
+        if (winPanel != null)
+            winPanel.SetActive(true);
+        Debug.Log("You Win!");
     }
 }
 

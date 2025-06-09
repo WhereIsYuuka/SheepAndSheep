@@ -19,7 +19,7 @@ public class GameLogicEditor : Editor
             mainCount += curRow * curCol;
         }
         int recommendExtraCount = (3 - mainCount % 3) % 3;
-        int totalCount = mainCount + recommendExtraCount;
+        int totalCount = mainCount;
         foreach (var item in logic.extraCellConfigs)
         {
             if (item != null)
