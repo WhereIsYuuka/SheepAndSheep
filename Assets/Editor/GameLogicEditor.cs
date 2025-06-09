@@ -20,10 +20,17 @@ public class GameLogicEditor : Editor
         }
         int recommendExtraCount = (3 - mainCount % 3) % 3;
         int totalCount = mainCount + recommendExtraCount;
+        foreach (var item in logic.extraCellConfigs)
+        {
+            if (item != null)
+            {
+                totalCount += item.count;
+            }
+        }
 
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Main Count", mainCount.ToString());
-        EditorGUILayout.LabelField("Recommend Extra Count", recommendExtraCount.ToString());
+        EditorGUILayout.LabelField("Recommend Extra Count", recommendExtraCount.ToString() + " + 3 * n");
         EditorGUILayout.LabelField("Total Count", totalCount.ToString());
         if(totalCount % 3 != 0)
         {

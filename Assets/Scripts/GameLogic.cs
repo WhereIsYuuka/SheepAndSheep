@@ -22,7 +22,7 @@ public class GameLogic : MonoBehaviour
     private RectTransform targetRectTransform;
     [SerializeField]
     [Header("=====The parameters of the extra cell=====")]
-    private List<ExtraCellConfig> extraCellConfigs = new();
+    [ReadOnly(true)] public List<ExtraCellConfig> extraCellConfigs = new();
     private Dictionary<ExtraCellDirection, List<Cell>> extraCells = new();
 
     private Pool<Cell> cellPool;
@@ -176,15 +176,62 @@ public class GameLogic : MonoBehaviour
 
         int totalCells = allCells.Count;
         int group = totalCells / 3;
-        List<int> values = new List<int>();
         int valueTypeCount = Mathf.Min(14, group);
+
+        List<int> values = new List<int>();
+        int baseCount = group / valueTypeCount * 3; // base count for each value type
+        int remainGroup = group - (baseCount / 3) * valueTypeCount; 
+
+        // 先均分
         for (int v = 1; v <= valueTypeCount; v++)
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < baseCount; i++)
                 values.Add(v);
-        while (values.Count < totalCells)
+
+        // 剩余组均匀分配
+        int vType = 1;
+        for (int i = 0; i < remainGroup; i++)
         {
-            values.Add(Random.Range(1, valueTypeCount + 1));
+            for (int j = 0; j < 3; j++)
+                values.Add(vType);
+            vType++;
+            if (vType > valueTypeCount) vType = 1;
         }
+        // List<int> values = new List<int>();
+        // int perType = totalCells / valueTypeCount;
+        // perType = perType / 3 * 3;
+        // int filled = 0;
+        // for (int v = 1; v <= valueTypeCount; v++)
+        // {
+        //     for (int i = 0; i < perType; i++)
+        //     {
+        //         values.Add(v);
+        //         filled++;
+        //         if (filled >= totalCells)
+        //             break;
+        //     }
+        //     if (filled >= totalCells)
+        //         break;
+        // }
+
+        // int remain = totalCells - filled;
+        // int[] typeCount = new int[valueTypeCount + 1];  //TODO
+        // for(int i = 1; i <= valueTypeCount; i++)
+        // {
+        //     typeCount[i] = perType;
+        // }
+        // int index = 1;
+        // while (remain > 0)
+        // {
+        //     if (typeCount[index] % 3 == 0)
+        //     {
+        //         values.Add(index);
+        //         typeCount[index]++;
+        //         remain--;
+        //     }
+        //     index++;
+        //     if (index > valueTypeCount)
+        //         index = 1;
+        // }
 
         for (int i = values.Count - 1; i > 0; i--)
         {
