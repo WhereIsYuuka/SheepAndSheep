@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System;
 
 public class StartUI : MonoBehaviour
 {
@@ -13,6 +14,7 @@ public class StartUI : MonoBehaviour
     private List<TextMeshProUGUI> textList;
     private void Awake()
     {
+        SetGameToWindows();
         imageLogo = GetComponent<Image>();
         textList = new List<TextMeshProUGUI>
         {
@@ -38,16 +40,17 @@ public class StartUI : MonoBehaviour
         sequence.Append(imageLogo.DOFade(1, 1f).SetEase(Ease.InOutSine))
                 .Join(textList[0].DOFade(1, 1f).SetEase(Ease.InOutSine))
                 .Join(textList[1].DOFade(1, 1f).SetEase(Ease.InOutSine))
-                .AppendInterval(fadeDuration)
-                .Append(textList[0].DOFade(0, 1f).SetEase(Ease.InOutSine))
-                .Join(textList[1].DOFade(0, 1f).SetEase(Ease.InOutSine))
-                .Join(imageLogo.DOFade(0, 1f).SetEase(Ease.InOutSine))
+                // .AppendInterval(fadeDuration)
+                // .Append(textList[0].DOFade(0, 1f).SetEase(Ease.InOutSine))
+                // .Join(textList[1].DOFade(0, 1f).SetEase(Ease.InOutSine))
+                // .Join(imageLogo.DOFade(0, 1f).SetEase(Ease.InOutSine))
                 .OnComplete(() =>
                 {
                     // AudioManager.Instance.PlaySFX(0);
                     // SceneManager.LoadSceneAsync("Menu");
+                    StartCoroutine(AudioManager.Instance.AddAudioSourceAsync());
+                    // AudioManager.Instance.RandomMusic();
                     LoadSceneMenu();
-                    AudioManager.Instance.RandomMusic();
                 });
     }
 
@@ -55,5 +58,12 @@ public class StartUI : MonoBehaviour
     {
         SceneManager.LoadSceneAsync("Menu");
         AudioManager.Instance.RandomMusic();
+    }
+
+    private void SetGameToWindows()
+    {
+        // Set the game to run in windowed mode
+        Screen.fullScreenMode = FullScreenMode.Windowed;
+        Screen.SetResolution(720, 1280, false);
     }
 }

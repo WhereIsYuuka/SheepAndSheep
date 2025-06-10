@@ -15,6 +15,12 @@ public class MenuUI : MonoBehaviour
 
     void Start()
     {
+        ButtonActions();
+        AudioManager.Instance.RandomMusic();
+    }
+
+    private void ButtonActions()
+    {
         startButton.onClick.AddListener(() =>
         {
             AudioManager.Instance.PlaySFX(0);

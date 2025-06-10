@@ -42,7 +42,7 @@ public class AudioManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            StartCoroutine(AddAudioSourceAsync());
+            // StartCoroutine(AddAudioSourceAsync());
         }
         else
         {
@@ -92,7 +92,7 @@ public class AudioManager : MonoBehaviour
         sfxSource.PlayOneShot(clip);
     }
 
-    private IEnumerator AddAudioSourceAsync()
+    public IEnumerator AddAudioSourceAsync()
     {
         if (musicSource == null)
         {
