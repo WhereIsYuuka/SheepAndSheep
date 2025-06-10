@@ -8,6 +8,10 @@ public class GameLogic : MonoBehaviour
 {
     public static GameLogic Instance { get; private set; }
     public GameObject cellPrefab;
+    public GameObject failPanel;
+    public GameObject winPanel;
+    public LevelConfigSO levelConfigSO;
+    private int currentLevelIndex = 0;
     [Header("=====The parameters of the center cell=====")]
     [ReadOnly(true)] public int layer = 3;
     [SerializeField]
@@ -22,6 +26,7 @@ public class GameLogic : MonoBehaviour
     private RectTransform targetRectTransform;
     [SerializeField]
     [Header("=====The parameters of the extra cell=====")]
+    public List<RectTransform> extraCellStartPositions = new();
     [ReadOnly(true)] public List<ExtraCellConfig> extraCellConfigs = new();
     private Dictionary<ExtraCellDirection, List<List<Cell>>> extraCells = new();
 
@@ -33,8 +38,7 @@ public class GameLogic : MonoBehaviour
     [SerializeField]
     private Cell[,,] cellArray;
     private bool isFailed;
-    public GameObject failPanel;
-    public GameObject winPanel;
+
 
     void Awake()
     {
@@ -145,8 +149,9 @@ public class GameLogic : MonoBehaviour
                     AudioManager.Instance.PlaySFX(1);
                     AddCellToBar(cell);
                 });
-                // cellList.Add(cell);
-                cellList.Insert(0, cell); 
+                cellList.Add(cell);
+                // cellList.Insert(0, cell);
+                // cellList.Reverse();
             }
             if (!extraCells.ContainsKey(config.direction))
                 extraCells[config.direction] = new List<List<Cell>>();
@@ -186,19 +191,22 @@ public class GameLogic : MonoBehaviour
         int valueTypeCount = Mathf.Min(14, group);
 
         List<int> values = new List<int>();
-        int baseCount = group / valueTypeCount * 3; // base count for each value type
-        int remainGroup = group - (baseCount / 3) * valueTypeCount;
-
-        // 先均分
+        int perType = group / valueTypeCount; // 每种类型有多少组
+        int filled = 0;
         for (int v = 1; v <= valueTypeCount; v++)
-            for (int i = 0; i < baseCount; i++)
-                values.Add(v);
-
-        // 剩余组均匀分配
-        int vType = 1;
-        for (int i = 0; i < remainGroup; i++)
         {
-            for (int j = 0; j < 3; j++)
+            for (int i = 0; i < perType * 3; i++)
+            {
+                values.Add(v);
+                filled++;
+            }
+        }
+        // 2. 剩余组均匀分配
+        int remain = totalCells - filled;
+        int vType = 1;
+        while (remain > 0)
+        {
+            for (int j = 0; j < 3 && remain > 0; j++, remain--)
                 values.Add(vType);
             vType++;
             if (vType > valueTypeCount) vType = 1;
@@ -221,7 +229,7 @@ public class GameLogic : MonoBehaviour
         // }
 
         // int remain = totalCells - filled;
-        // int[] typeCount = new int[valueTypeCount + 1];  //TODO
+        // int[] typeCount = new int[valueTypeCount + 1];  
         // for(int i = 1; i <= valueTypeCount; i++)
         // {
         //     typeCount[i] = perType;
@@ -248,6 +256,11 @@ public class GameLogic : MonoBehaviour
             values[rand] = temp;
         }
 
+        if(values.Count != allCells.Count)
+        {
+            Debug.LogError($"Values count {values.Count} does not match cells count {allCells.Count}.");
+            return;
+        }
         for (int i = 0; i < allCells.Count; i++)
             allCells[i].Value = values[i];
     }
@@ -322,6 +335,7 @@ public class GameLogic : MonoBehaviour
                             new Vector3(b.transform.localPosition.x + barOffset, 0, 0), 0.5f
                         ).SetEase(Ease.OutBack).OnComplete(() =>
                         {
+                            //TODO: Instance effect after cell is removed
                             cellPool.ReturnObject(cell);
                             cellPool.ReturnObject(a);
                             cellPool.ReturnObject(b);
@@ -497,7 +511,7 @@ public class GameLogic : MonoBehaviour
                     if (cellArray[i, j, k] != null)
                     {
                         Debug.Log($"Cell {i}_{j}_{k} is not null, game not win yet.");
-                        return; 
+                        return;
                     }
         }
         // extra
@@ -507,17 +521,110 @@ public class GameLogic : MonoBehaviour
                 {
                     Debug.Log("Extra cell list is not empty, game not win yet.");
                     return;
-                } 
+                }
 
-        if(cells.Count > 0)
+        if (cells.Count > 0)
         {
             Debug.Log("Bar is not empty, game not win yet.");
             return;
         }
-        
+
         if (winPanel != null)
             winPanel.SetActive(true);
         Debug.Log("You Win!");
+    }
+
+    public void ApplyLevelConfig(LevelConfig levelConfig)
+    {
+        layer = levelConfig.layer;
+        row = levelConfig.row;
+        col = levelConfig.col;
+        extraCellConfigs.Clear();
+        // foreach (var extra in levelConfig.extraCellConfigs)
+        // {
+        //     ExtraCellConfig config = new ExtraCellConfig
+        //     {
+        //         direction = extra.direction,
+        //         count = extra.count,
+        //         offset = extra.offset,
+        //         // startPosition = extra.startPosition
+        //         startPosition = extraCellStartPositions[(int)extra.direction]
+        //     };
+        //     extraCellConfigs.Add(config);
+        // }
+        if (levelConfig.extraCellConfigs.Count != extraCellStartPositions.Count)
+        {
+            Debug.LogWarning("extraCellConfigs 和 extraCellStartPositions 数量不一致！");
+        }
+
+        int count = Mathf.Min(levelConfig.extraCellConfigs.Count, extraCellStartPositions.Count);
+        for (int i = 0; i < count; i++)
+        {
+            var extra = levelConfig.extraCellConfigs[i];
+            ExtraCellConfig config = new ExtraCellConfig
+            {
+                direction = extra.direction,
+                count = extra.count,
+                offset = extra.offset,
+                startPosition = extraCellStartPositions[i]
+            };
+            extraCellConfigs.Add(config);
+        }
+    }
+
+    public void OnGameEnd()
+    {
+        if (levelConfigSO != null && levelConfigSO.levelConfigs.Count > 0)
+        {
+            ResetAllState();
+            
+
+            int idx = Random.Range(0, levelConfigSO.levelConfigs.Count);
+            ApplyLevelConfig(levelConfigSO.levelConfigs[idx]);
+
+            GenerateCells();
+            GenerateExtraCells();
+            AssignValuesForAllCells();
+
+            winPanel.SetActive(false);
+            failPanel.SetActive(false);
+        }
+    }
+
+    private void ResetAllState()
+    {
+        // 清空主区cell
+        if (cellArray != null)
+        {
+            for (int i = 0; i < cellArray.GetLength(0); i++)
+                for (int j = 0; j < cellArray.GetLength(1); j++)
+                    for (int k = 0; k < cellArray.GetLength(2); k++)
+                    {
+                        if (cellArray[i, j, k] != null)
+                        {
+                            cellPool.ReturnObject(cellArray[i, j, k]);
+                            cellArray[i, j, k] = null;
+                        }
+                    }
+        }
+    
+        // 清空extra cell
+        foreach (var extraCellList in extraCells.Values)
+            foreach (var cellList in extraCellList)
+                foreach (var cell in cellList)
+                    cellPool.ReturnObject(cell);
+        extraCells.Clear();
+    
+        // 清空bar
+        foreach (var cell in cells)
+            cellPool.ReturnObject(cell);
+        cells.Clear();
+    
+        // 清空extraCellConfigs
+        extraCellConfigs.Clear();
+    
+        // 状态重置
+        isFailed = false;
     }
 }
 
@@ -537,5 +644,6 @@ public class ExtraCellConfig
     public ExtraCellDirection direction;
     public int count;
     public float offset;
+    [HideInInspector]
     public RectTransform startPosition;
 }

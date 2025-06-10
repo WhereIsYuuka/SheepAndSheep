@@ -20,11 +20,12 @@ public class FailUI : MonoBehaviour
 
     private void OnRestartButtonClicked()
     {
-        GameManager.Instance.RestartGame();
+        GameLogic.Instance.OnGameEnd();
     }
 
     private void OnMenuButtonClicked()
     {
         GameManager.Instance.LoadSceneMenu();
+        
     }
 }

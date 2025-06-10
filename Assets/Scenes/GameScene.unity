@@ -2403,42 +2403,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
---- !u!1 &1560982125
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1560982126}
-  m_Layer: 5
-  m_Name: Pos3
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &1560982126
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1560982125}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1715800883}
-  m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -330}
-  m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1590046548
 GameObject:
   m_ObjectHideFlags: 0
@@ -3063,7 +3027,6 @@ RectTransform:
   m_Children:
   - {fileID: 2035977284}
   - {fileID: 1377778734}
-  - {fileID: 1560982126}
   - {fileID: 2084550194}
   m_Father: {fileID: 1623924041}
   m_RootOrder: 1
@@ -3087,31 +3050,32 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cellPrefab: {fileID: 8133587392543974592, guid: d7b385d4b5ac0fd4db34086f2a120277,
     type: 3}
-  layer: 1
+  failPanel: {fileID: 7237382300008004280}
+  winPanel: {fileID: 829635850}
+  levelConfigSO: {fileID: 11400000, guid: e6111e5786d961345b53cbef6bfe9518, type: 2}
+  layer: 3
   row: 5
   col: 5
   offsetSize: 85
   barOffset: 137
   targetRectTransform: {fileID: 722107108}
+  extraCellStartPositions:
+  - {fileID: 2035977284}
+  - {fileID: 1377778734}
+  - {fileID: 2084550194}
   extraCellConfigs:
   - direction: 3
-    count: 5
+    count: 6
     offset: 10
     startPosition: {fileID: 2035977284}
   - direction: 3
-    count: 3
+    count: 5
     offset: 10
     startPosition: {fileID: 1377778734}
   - direction: 0
-    count: 3
-    offset: 10
-    startPosition: {fileID: 1560982126}
-  - direction: 1
-    count: 3
+    count: 5
     offset: 10
     startPosition: {fileID: 2084550194}
-  failPanel: {fileID: 7237382300008004280}
-  winPanel: {fileID: 829635850}
 --- !u!1 &1814841853
 GameObject:
   m_ObjectHideFlags: 0
@@ -3654,7 +3618,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2084550194}
   m_Layer: 5
-  m_Name: Pos4
+  m_Name: Pos3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3673,7 +3637,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1715800883}
-  m_RootOrder: 3
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}

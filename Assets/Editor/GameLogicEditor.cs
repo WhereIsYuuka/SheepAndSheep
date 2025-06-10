@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using System.Collections.Generic;
 
 [CustomEditor(typeof(GameLogic))]
 public class GameLogicEditor : Editor
@@ -9,6 +10,38 @@ public class GameLogicEditor : Editor
         DrawDefaultInspector();
 
         GameLogic logic = (GameLogic)target;
+
+        if (GUILayout.Button("Save config"))
+        {
+            if (logic.levelConfigSO != null)
+            {
+                var config = new LevelConfig
+                {
+                    layer = logic.layer,
+                    row = logic.row,
+                    col = logic.col,
+                    extraCellConfigs = new List<ExtraCellConfig>()
+                };
+                foreach (var item in logic.extraCellConfigs)
+                {
+                    config.extraCellConfigs.Add(new ExtraCellConfig
+                    {
+                        direction = item.direction,
+                        count = item.count,
+                        offset = item.offset,
+                        startPosition = item.startPosition
+                    });
+                }
+                logic.levelConfigSO.levelConfigs.Add(config);
+                EditorUtility.SetDirty(logic.levelConfigSO);
+                Debug.Log("Config saved to LevelConfigSO.");
+            }
+            else
+            {
+                Debug.LogWarning("LevelConfigSO is not assigned.");
+            }
+        }
+
         int mainCount = 0;
         for (int i = 0; i < logic.layer; i++)
         {

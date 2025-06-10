@@ -42,7 +42,7 @@ public class AudioManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            // StartCoroutine(AddAudioSourceAsync());
+            StartCoroutine(AddAudioSourceAsync());
         }
         else
         {
