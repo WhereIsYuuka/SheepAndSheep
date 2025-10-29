@@ -13,9 +13,7 @@
 - 失败：收纳栏满（默认 7）
 - 胜利：全部清空
 
-[![pVxq69U.png](https://s21.ax1x.com/2025/10/30/pVxq69U.png)](https://imgchr.com/i/pVxq69U)
-
-[![pVxqDA0.jpg](https://s21.ax1x.com/2025/10/30/pVxqDA0.jpg)](https://imgchr.com/i/pVxqDA0)
+[<img src="https://s21.ax1x.com/2025/10/30/pVxq69U.png" alt="pVxq69U.png" style="zoom: 40%;" />](https://imgchr.com/i/pVxq69U)[<img src="https://s21.ax1x.com/2025/10/30/pVxqDA0.jpg" alt="pVxqDA0.jpg" style="zoom: 40%;" />](https://imgchr.com/i/pVxqDA0)
 
 
 
